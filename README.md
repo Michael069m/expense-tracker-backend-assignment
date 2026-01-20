@@ -40,82 +40,95 @@ npm start
 
 Base path: `/api`
 
-| Route | Method | Purpose | Sample Request | Sample Response |
-| --- | --- | --- | --- | --- |
-| `/users` | POST | Create a user with monthly budget | Body:
+### POST /users
+- Purpose: Create a user with monthly budget.
+- Sample request
 ```json
 {
-	"name": "Jane Doe",
-	"email": "jane@example.com",
-	"monthlyBudget": 5000
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "monthlyBudget": 5000
 }
-``` | `201 Created`:
+```
+- Sample response (`201 Created`)
 ```json
 {
-	"_id": "...",
-	"name": "Jane Doe",
-	"email": "jane@example.com",
-	"monthlyBudget": 5000,
-	"createdAt": "...",
-	"updatedAt": "...",
-	"__v": 0
+  "_id": "...",
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "monthlyBudget": 5000,
+  "createdAt": "...",
+  "updatedAt": "...",
+  "__v": 0
 }
-``` |
-| `/expenses` | POST | Add an expense for a user | Body:
+```
+
+### POST /expenses
+- Purpose: Add an expense for a user.
+- Sample request
 ```json
 {
-	"title": "Coffee",
-	"amount": 4.5,
-	"category": "Food",
-	"userId": "<userId>",
-	"date": "2026-01-20T10:00:00.000Z"
+  "title": "Coffee",
+  "amount": 4.5,
+  "category": "Food",
+  "userId": "<userId>",
+  "date": "2026-01-20T10:00:00.000Z"
 }
-``` | `201 Created`:
+```
+- Sample response (`201 Created`)
 ```json
 {
-	"_id": "...",
-	"title": "Coffee",
-	"amount": 4.5,
-	"category": "Food",
-	"user": "<userId>",
-	"date": "2026-01-20T10:00:00.000Z",
-	"createdAt": "...",
-	"updatedAt": "...",
-	"__v": 0
+  "_id": "...",
+  "title": "Coffee",
+  "amount": 4.5,
+  "category": "Food",
+  "user": "<userId>",
+  "date": "2026-01-20T10:00:00.000Z",
+  "createdAt": "...",
+  "updatedAt": "...",
+  "__v": 0
 }
-``` |
-| `/users/:id/expenses` | GET | List a user's expenses with pagination and optional category filter | Query: `page=1&limit=10&category=Food` | `200 OK`:
+```
+
+### GET /users/:id/expenses
+- Purpose: List a user's expenses with pagination and optional category filter.
+- Query params: `page=1&limit=10&category=Food`
+- Sample response (`200 OK`)
 ```json
 {
-	"expenses": [
-		{
-			"_id": "...",
-			"title": "Coffee",
-			"amount": 4.5,
-			"category": "Food",
-			"user": "<userId>",
-			"date": "2026-01-20T10:00:00.000Z",
-			"createdAt": "...",
-			"updatedAt": "...",
-			"__v": 0
-		}
-	],
-	"page": 1,
-	"limit": 10,
-	"total": 1
+  "expenses": [
+    {
+      "_id": "...",
+      "title": "Coffee",
+      "amount": 4.5,
+      "category": "Food",
+      "user": "<userId>",
+      "date": "2026-01-20T10:00:00.000Z",
+      "createdAt": "...",
+      "updatedAt": "...",
+      "__v": 0
+    }
+  ],
+  "page": 1,
+  "limit": 10,
+  "total": 1
 }
-``` |
-| `/users/:id/summary` | GET | Monthly summary: total spent, remaining budget, count | Query (optional): `month=0&year=2026` | `200 OK`:
+```
+
+### GET /users/:id/summary
+- Purpose: Monthly summary with total spent, remaining budget, and expense count.
+- Optional query: `month=0&year=2026` (month is zero-based; defaults to current month/year when omitted).
+- Sample response (`200 OK`)
 ```json
 {
-	"month": 0,
-	"year": 2026,
-	"totalSpent": 2500,
-	"expenseCount": 12,
-	"monthlyBudget": 5000,
-	"remainingBudget": 2500
+  "month": 0,
+  "year": 2026,
+  "totalSpent": 2500,
+  "expenseCount": 12,
+  "monthlyBudget": 5000,
+  "remainingBudget": 2500
 }
-``` |
+```
 
 Notes:
 - `month` is zero-based (January = 0). If omitted, the current month is used.
