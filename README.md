@@ -8,6 +8,7 @@ Backend service for recording personal expenses, enforcing per-user monthly budg
 - Express
 - TypeScript
 - MongoDB Atlas (Mongoose ODM)
+- Axios (webhooks), csv-parse (CSV import), date-fns (recurring scheduling)
 
 ## Setup Instructions
 1) Clone and install
@@ -40,98 +41,66 @@ npm start
 
 Base path: `/api`
 
-### POST /users
-- Purpose: Create a user with monthly budget.
-- Sample request
+- **POST /users** – create user (supports `categoryBudgets` and optional `webhookUrl`).
+- **POST /expenses** – add expense with tags/note; response includes budget status and webhook flag.
+- **POST /expenses/import** – bulk create from CSV (`title,amount,category,date,tags,note`).
+- **GET /users/:id/expenses** – list expenses with pagination/category filter.
+- **GET /users/:id/expenses/export** – export expenses as CSV.
+- **GET /users/:id/summary** – monthly totals + remaining budget.
+- **GET /users/:id/insights** – category breakdown, top categories, spikes vs previous month.
+- **GET /users/:id/forecast** – next-month forecast using recurring + recent variable spend.
+- **POST /categories** / **GET /categories** – manage category dictionary (emoji/color support).
+- **POST /recurring** – create monthly recurring expense template (dayOfMonth 1–28).
+- **POST /recurring/run** – process due recurring expenses immediately.
+
+### Sample payloads
+
+**Create user**
 ```json
 {
-  "name": "Jane Doe",
-  "email": "jane@example.com",
-  "monthlyBudget": 5000
-}
-```
-- Sample response (`201 Created`)
-```json
-{
-  "_id": "...",
   "name": "Jane Doe",
   "email": "jane@example.com",
   "monthlyBudget": 5000,
-  "createdAt": "...",
-  "updatedAt": "...",
-  "__v": 0
+  "categoryBudgets": [
+    { "category": "Food", "limit": 2000 }
+  ],
+  "webhookUrl": "https://example.com/webhooks/budget"
 }
 ```
 
-### POST /expenses
-- Purpose: Add an expense for a user.
-- Sample request
+**Create expense**
 ```json
 {
   "title": "Coffee",
   "amount": 4.5,
   "category": "Food",
   "userId": "<userId>",
-  "date": "2026-01-20T10:00:00.000Z"
-}
-```
-- Sample response (`201 Created`)
-```json
-{
-  "_id": "...",
-  "title": "Coffee",
-  "amount": 4.5,
-  "category": "Food",
-  "user": "<userId>",
-  "date": "2026-01-20T10:00:00.000Z",
-  "createdAt": "...",
-  "updatedAt": "...",
-  "__v": 0
+  "tags": ["morning", "cafe"],
+  "note": "Flat white"
 }
 ```
 
-### GET /users/:id/expenses
-- Purpose: List a user's expenses with pagination and optional category filter.
-- Query params: `page=1&limit=10&category=Food`
-- Sample response (`200 OK`)
+**Create recurring expense**
 ```json
 {
-  "expenses": [
-    {
-      "_id": "...",
-      "title": "Coffee",
-      "amount": 4.5,
-      "category": "Food",
-      "user": "<userId>",
-      "date": "2026-01-20T10:00:00.000Z",
-      "createdAt": "...",
-      "updatedAt": "...",
-      "__v": 0
-    }
-  ],
-  "page": 1,
-  "limit": 10,
-  "total": 1
+  "title": "Rent",
+  "amount": 1200,
+  "category": "Housing",
+  "dayOfMonth": 1,
+  "userId": "<userId>",
+  "tags": ["fixed"],
+  "note": "Apartment rent"
 }
 ```
 
-### GET /users/:id/summary
-- Purpose: Monthly summary with total spent, remaining budget, and expense count.
-- Optional query: `month=0&year=2026` (month is zero-based; defaults to current month/year when omitted).
-- Sample response (`200 OK`)
-```json
-{
-  "month": 0,
-  "year": 2026,
-  "totalSpent": 2500,
-  "expenseCount": 12,
-  "monthlyBudget": 5000,
-  "remainingBudget": 2500
-}
+**CSV import example (body.csv string)**
+```
+title,amount,category,date,tags,note
+Coffee,4.5,Food,2026-01-20T10:00:00.000Z,morning;cafe,Flat white
 ```
 
 Notes:
-- `month` is zero-based (January = 0). If omitted, the current month is used.
+- `month` is zero-based (January = 0) for summary/insights/forecast.
 - Pagination defaults: `page=1`, `limit=10`.
 - Validation uses Joi; invalid payloads return `400` with details.
 

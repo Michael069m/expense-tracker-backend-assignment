@@ -6,6 +6,9 @@ export interface IExpense extends Document {
   category: string;
   date: Date;
   user: Types.ObjectId;
+  tags: string[];
+  note?: string;
+  isRecurringInstance?: boolean;
 }
 
 const expenseSchema = new Schema<IExpense>(
@@ -31,6 +34,9 @@ const expenseSchema = new Schema<IExpense>(
     },
     date: { type: Date, default: Date.now },
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    tags: { type: [String], default: [] },
+    note: { type: String, maxlength: 500 },
+    isRecurringInstance: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

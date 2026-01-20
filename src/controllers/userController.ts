@@ -3,6 +3,8 @@ import {
   createUser,
   getMonthlySummary,
   getUserExpenses,
+  getForecast,
+  getInsights,
 } from "../services/userService";
 
 export const createUserHandler: RequestHandler = async (req, res, next) => {
@@ -43,6 +45,36 @@ export const getUserSummaryHandler: RequestHandler = async (req, res, next) => {
       year !== undefined ? Number(year) : undefined,
     );
     return res.json(summary);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getUserInsightsHandler: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { month, year } = req.query as any;
+    const insights = await getInsights(
+      id,
+      month !== undefined ? Number(month) : undefined,
+      year !== undefined ? Number(year) : undefined,
+    );
+    return res.json(insights);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getForecastHandler: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { month, year } = req.query as any;
+    const forecast = await getForecast(
+      id,
+      month !== undefined ? Number(month) : undefined,
+      year !== undefined ? Number(year) : undefined,
+    );
+    return res.json(forecast);
   } catch (error) {
     return next(error);
   }

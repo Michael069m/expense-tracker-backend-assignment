@@ -4,6 +4,8 @@ export interface IUser extends Document {
   name: string;
   email: string;
   monthlyBudget: number;
+  categoryBudgets?: { category: string; limit: number }[];
+  webhookUrl?: string;
 }
 
 const userSchema = new Schema<IUser>(
@@ -30,6 +32,26 @@ const userSchema = new Schema<IUser>(
       type: Number,
       required: true,
       min: [0.01, "Monthly budget must be greater than 0"],
+    },
+    categoryBudgets: [
+      {
+        category: {
+          type: String,
+          required: true,
+          trim: true,
+          minlength: 2,
+          maxlength: 50,
+        },
+        limit: { type: Number, required: true, min: [0.01, "Category limit must be greater than 0"] },
+      },
+    ],
+    webhookUrl: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: (value: string) => /^https?:\/\//.test(value),
+        message: "webhookUrl must be http(s)",
+      },
     },
   },
   { timestamps: true },
