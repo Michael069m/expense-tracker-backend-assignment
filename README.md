@@ -1,16 +1,23 @@
 # Personal Expense Tracker
 
-## Project Overview
-Backend service for recording personal expenses, enforcing per-user monthly budgets, listing expenses with pagination and category filters, and returning monthly spending summaries. Built to be small, modular, and cloud-ready.
+Backend service for recording personal expenses, enforcing per-user budgets, and sending rich monthly reports. The service is modular, cloud-ready, and ships with automation for insights, CSV flows, and email delivery.
+
+## Key Features
+- Budgets & summaries: per-user monthly budgets, category budgets, summaries, and remaining balance.
+- Insights & forecast: top categories, anomaly spikes, and next-month forecast combining recurring + recent spend.
+- Categories & recurring: shared category dictionary (emoji/color), recurring templates (day 1–28), and manual run hook.
+- CSV import/export: one-shot import of expenses from CSV and export to CSV for any user.
+- Webhooks: optional per-user webhook fire when budgets are breached or recurring expenses are processed.
+- Reporting & email: SendGrid-first mailer (SMTP fallback) with HTML + CSV attachment; test endpoint plus cron-driven monthly/annual sends.
 
 ## Tech Stack
-- Node.js
-- Express
-- TypeScript
+- Node.js, Express, TypeScript
 - MongoDB Atlas (Mongoose ODM)
-- Axios (webhooks), csv-parse (CSV import), date-fns (recurring scheduling)
+- csv-parse, date-fns, node-cron
+- Axios for webhooks
+- @sendgrid/mail (preferred) with Nodemailer SMTP fallback
 
-## Setup Instructions
+## Setup
 1) Clone and install
 ```
 git clone <repo-url>
@@ -18,12 +25,14 @@ cd personal-expense-tracker
 npm install
 ```
 2) Configure environment
-	 - Copy `.env.example` to `.env`.
-	 - Set `MONGODB_URI` to your MongoDB Atlas SRV string (e.g., `mongodb+srv://...`).
-	 - Optionally set `PORT` (defaults to 3000) and `NODE_ENV`.
+   - Copy `.env.example` to `.env`.
+   - Set `MONGODB_URI` to your MongoDB Atlas SRV string.
+   - Optional: `PORT` (default 3000) and `NODE_ENV`.
+   - Email (SendGrid preferred): `SENDGRID_API_KEY`, `SENDGRID_FROM`.
+   - SMTP fallback (only if SendGrid is absent): `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`.
 3) Run the server
 ```
-npm run dev      # ts-node
+npm run dev
 # or
 npm run dev:watch
 ```
@@ -33,25 +42,23 @@ npm run build
 npm start
 ```
 
-## Database Configuration
-- Uses MongoDB Atlas via the `MONGODB_URI` connection string in `.env`.
-- Ensure your IP is whitelisted in Atlas and the user has the required permissions.
+## Database
+- Connects via `MONGODB_URI`.
+- Ensure your Atlas IP allowlist and user permissions are set.
 
-## API Documentation
-
-Base path: `/api`
-
-- **POST /users** – create user (supports `categoryBudgets` and optional `webhookUrl`).
-- **POST /expenses** – add expense with tags/note; response includes budget status and webhook flag.
+## API Overview (base: `/api`)
+- **POST /users** – create user (supports `categoryBudgets`, `webhookUrl`).
+- **POST /expenses** – add expense with tags/note; response flags budget breach and webhook trigger.
 - **POST /expenses/import** – bulk create from CSV (`title,amount,category,date,tags,note`).
-- **GET /users/:id/expenses** – list expenses with pagination/category filter.
+- **GET /users/:id/expenses** – list expenses with pagination and category filter.
 - **GET /users/:id/expenses/export** – export expenses as CSV.
 - **GET /users/:id/summary** – monthly totals + remaining budget.
 - **GET /users/:id/insights** – category breakdown, top categories, spikes vs previous month.
-- **GET /users/:id/forecast** – next-month forecast using recurring + recent variable spend.
-- **POST /categories** / **GET /categories** – manage category dictionary (emoji/color support).
+- **GET /users/:id/forecast** – next-month forecast using recurring templates + recent variable spend.
+- **POST /categories** / **GET /categories** – manage category dictionary (emoji/color for UI hints).
 - **POST /recurring** – create monthly recurring expense template (dayOfMonth 1–28).
 - **POST /recurring/run** – process due recurring expenses immediately.
+- **POST /users/:id/test-report** – generate report now and email HTML + CSV attachment to the user.
 
 ### Sample payloads
 
@@ -95,7 +102,7 @@ Base path: `/api`
 
 **CSV import example (body.csv string)**
 ```
-title,amount,category,date,tags,note
+
 Coffee,4.5,Food,2026-01-20T10:00:00.000Z,morning;cafe,Flat white
 ```
 
@@ -104,8 +111,14 @@ Notes:
 - Pagination defaults: `page=1`, `limit=10`.
 - Validation uses Joi; invalid payloads return `400` with details.
 
+## Email Reporting
+- Preferred: set `SENDGRID_API_KEY` and `SENDGRID_FROM` (verified sender). No SMTP variables are needed in this mode.
+- Fallback: provide `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` when SendGrid is not configured.
+- Manual test: `curl -X POST "http://localhost:3000/api/users/<userId>/test-report"` to trigger an immediate HTML+CSV report email.
+- Automated: node-cron runs monthly (1st of each month) and annual (Jan 1) reports for all users.
+
 ## Assumptions
 - Currency amounts are treated as a generic number (assumed INR unless specified) with no exchange handling.
 - Month calculations are based on calendar months (`month` zero-based) using server time zone.
-- Expenses require an existing user; user existence is enforced in service layer and Mongoose pre-save hook.
-- No authentication layer is included; routes are open for simplicity and should be secured before production.
+- Expenses require an existing user; enforced in service layer and Mongoose pre-save hook.
+- No authentication layer is included; secure the routes before production use.

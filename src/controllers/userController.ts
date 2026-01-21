@@ -6,6 +6,8 @@ import {
   getForecast,
   getInsights,
 } from "../services/userService";
+import { generateUserReport } from "../services/reportService";
+import { sendReportEmail } from "../services/mailService";
 
 export const createUserHandler: RequestHandler = async (req, res, next) => {
   try {
@@ -75,6 +77,34 @@ export const getForecastHandler: RequestHandler = async (req, res, next) => {
       year !== undefined ? Number(year) : undefined,
     );
     return res.json(forecast);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const testReportHandler: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { month, year } = req.query as any;
+    const report = await generateUserReport(
+      id,
+      month !== undefined ? Number(month) : undefined,
+      year !== undefined ? Number(year) : undefined,
+    );
+    await sendReportEmail({
+      to: report.userEmail,
+      userName: report.userName,
+      summary: {
+        totalSpent: report.totalSpent,
+        previousTotal: report.previousTotal,
+        topCategories: report.topCategories,
+        monthlyBudget: report.monthlyBudget,
+        remainingBudget: report.remainingBudget,
+        periodLabel: report.periodLabel,
+      },
+      csvBuffer: report.csvBuffer,
+    });
+    return res.json({ message: "Report generated and email sent" });
   } catch (error) {
     return next(error);
   }

@@ -5,6 +5,7 @@ import {
   getUserSummaryHandler,
   getUserInsightsHandler,
   getForecastHandler,
+  testReportHandler,
 } from "../controllers/userController";
 import { exportExpensesHandler } from "../controllers/expenseController";
 import { validateBody, validateQuery } from "../middleware/validateRequest";
@@ -14,6 +15,7 @@ import {
   summaryQuerySchema,
   forecastQuerySchema,
   insightsQuerySchema,
+  summaryQuerySchema as reportQuerySchema,
 } from "../middleware/validators";
 
 const router = Router();
@@ -39,6 +41,11 @@ router.get(
   "/:id/forecast",
   validateQuery(forecastQuerySchema),
   getForecastHandler,
+);
+router.post(
+  "/:id/test-report",
+  validateQuery(reportQuerySchema),
+  testReportHandler,
 );
 
 export default router;

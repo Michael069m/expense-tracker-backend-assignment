@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import connectDB from "./config/db";
 import routes from "./routes";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+import { startSchedulers } from "./scheduler";
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use(errorHandler);
 const start = async () => {
   try {
     await connectDB(mongoUri);
+    startSchedulers();
     app.listen(port, () => {
       console.log(`Server listening on port ${port}`);
     });
